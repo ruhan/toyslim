@@ -1,4 +1,4 @@
-from sklearn.linear_model import SGDRegressor
+rom sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
 from util import tsv_to_matrix
@@ -71,4 +71,6 @@ def main(train_file, user_sideinformation_file, test_file):
 
     compute_precision(recommendations, test_file)
 
-main('data/train_100.tsv', 'data/item_side_information_100.tsv', 'data/test_100.tsv')
+
+if __name__ == '__main__':
+    main('data/train_100.tsv', 'data/item_side_information_100.tsv', 'data/test_100.tsv')

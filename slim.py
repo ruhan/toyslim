@@ -1,3 +1,7 @@
+"""
+SLIM basic implementation. To understand deeply how it works we encourage you to
+read "SLIM: Sparse LInear Methods for Top-N Recommender Systems".
+"""
 from sklearn.linear_model import SGDRegressor
 from util import tsv_to_matrix
 from metrics import compute_precision
@@ -66,5 +70,5 @@ def main(train_file, test_file):
 
     compute_precision(recommendations, test_file)
 
-main('data/train_100.tsv', 'data/test_100.tsv')
-#main('wrmf.csv.train.atracoes.0', 'wrmf.csv.test.0')
+if __name__ == '__main__':
+    main('data/train_100.tsv', 'data/test_100.tsv')
