@@ -1,5 +1,4 @@
-from scipy.sparse import lil_matrix
-from sklearn.linear_model import SGDRegressor, ElasticNet
+from sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
 from util import tsv_to_matrix
