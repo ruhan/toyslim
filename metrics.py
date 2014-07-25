@@ -1,3 +1,4 @@
+from cdecimal import Decimal
 PRECISION_AT = 20
 
 def compute_precision(recommendations, test_file):
@@ -19,13 +20,13 @@ def compute_precision(recommendations, test_file):
                 user_item[u] = set([i])
 
     # Computing
-    total_users = float(len(recommendations.keys()))
+    total_users = Decimal(len(recommendations.keys()))
     for at in range(1, PRECISION_AT+1):
         mean = 0
         for u in recommendations.keys():
             relevants = user_item[u]
             retrieved = recommendations[u][:at]
-            precision = len(relevants & set(retrieved))/float(len(retrieved))
+            precision = len(relevants & set(retrieved))/Decimal(len(retrieved))
             mean += precision
 
         print 'Average Precision @%s: %s' % (at, (mean/total_users))
@@ -33,7 +34,9 @@ def compute_precision(recommendations, test_file):
 
 def compute_precision_as_an_oracle(recommendations, test_file):
     """
-    Computes recommendation precision based on a tsv test file.
+    Computes recommendation precision based on a tsv test file but computing it
+    as we had an oracle that predicts the best ranking that can be done with
+    the recommendations.
     """
     ## Computing precision
     # Organizing data
@@ -49,7 +52,7 @@ def compute_precision_as_an_oracle(recommendations, test_file):
             else:
                 user_item[u] = set([i])
 
-    total_users = float(len(recommendations.keys()))
+    total_users = Decimal(len(recommendations.keys()))
 
     # Changing recommendations as an ORACLE
     for u in recommendations.keys():
@@ -65,7 +68,7 @@ def compute_precision_as_an_oracle(recommendations, test_file):
         for u in recommendations.keys():
             relevants = user_item[u]
             retrieved = recommendations[u][:at]
-            precision = len(relevants & set(retrieved))/float(len(retrieved))
+            precision = len(relevants & set(retrieved))/Decimal(len(retrieved))
             mean += precision
 
         print 'Average Precision @%s: %s' % (at, (mean/total_users))

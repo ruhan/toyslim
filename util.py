@@ -1,4 +1,7 @@
 from scipy.sparse import lil_matrix
+import PIL
+from matplotlib import pyplot as plt
+from cdecimal import Decimal
 
 def tsv_to_matrix(f, rows=None, cols=None):
     """
@@ -27,9 +30,19 @@ def tsv_to_matrix(f, rows=None, cols=None):
         for line in input_file:
             x, y, v = line.split(' ')
             x, y = int(x), int(y)
-            v = float(v.strip())
+            v = Decimal(v.strip())
             data[x, y] = v
 
     return data.toarray()
 
+def show_matplot_fig():
+    """
+    Store and show an image from matplotlib that is in the context.
 
+    We are using it to avoid installing several libraries only to show a graphic
+    """
+    path = './img/test.png'
+
+    plt.savefig(path)
+    img = PIL.Image.open(path)
+    img.show()

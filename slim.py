@@ -54,7 +54,8 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
         A[:, j] = aj
 
         w = model.coef_
-        # Removing zeroes
+
+        # Removing negative values because it makes no sense in our approach
         w[w<0] = 0
         W.append(w)
 

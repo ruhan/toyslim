@@ -1,4 +1,4 @@
-rom sklearn.linear_model import SGDRegressor
+from sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
 from util import tsv_to_matrix
@@ -55,8 +55,10 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         Mline[:, j] = mlinej
 
         w = model.coef_
-        # Removing zeroes
+
+        # Removing negative values because it makes no sense in our approach
         w[w<0] = 0
+
         W.append(w)
 
     return W
