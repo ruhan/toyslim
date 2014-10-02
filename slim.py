@@ -8,7 +8,6 @@ from metrics import compute_precision
 from recommender import slim_recommender
 import numpy as np
 
-
 def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
     """
     Computes W matrix of SLIM
@@ -35,7 +34,7 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
         penalty='elasticnet',
         fit_intercept=False,
         alpha=alpha,
-        l1_ratio=l1_ratio
+        l1_ratio=l1_ratio,
     )
 
     # TODO: get dimensions in the right way
@@ -72,4 +71,4 @@ def main(train_file, test_file):
     compute_precision(recommendations, test_file)
 
 if __name__ == '__main__':
-    main('data/train_100.tsv', 'data/test_100.tsv')
+    main('data/100_without_stemming/usuarios_atracoes_train.tsv', 'data/100_without_stemming/usuarios_atracoes_test.tsv')

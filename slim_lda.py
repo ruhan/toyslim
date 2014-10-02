@@ -121,7 +121,7 @@ class LDAHierarquical(object):
         # TODO: in the future, it should be generated automatically by slim, as
         # the first step of all algorithms
         normalized = json.loads(open('data/normalized.json').read())
-        normalized_side_information = json.loads(open('data/normalized_side_information.json').read())
+        normalized_side_information = normalized['atracoes']
         inverse_normalized_side = { v:k for k, v in normalized_side_information.iteritems() }
 
         # Inversing hierarchy to simplify our work
@@ -201,14 +201,14 @@ def slim_lda_recommender(A, W, lda):
 
     LDA_matrix = LDA_matrix.toarray()
     LDA_matrix = LDA_matrix/(np.max(LDA_matrix)-np.min(LDA_matrix[LDA_matrix>0]))
-    from util import show_matplot_fig
+    #from util import show_matplot_fig
     #import pdb;pdb.set_trace()
     #sorted(list(LDA_matrix[1][LDA_matrix[1]>0]/med))
 
     # Organizing A_hat matrix to simplify Top-N recommendation
     for u in range(1, m):
         for i in range(1, n):
-            v = (0.01 + A_hat[u][i]) * LDA_matrix[u, i]
+            v = A_hat[u][i] * LDA_matrix[u, i]
 
             if v > 0:
                 # NOTE: it only recommends items that the user haven't rated yet
@@ -236,7 +236,52 @@ def main(train_file, user_item_side_information_file, hierarchy_file, test_file)
     B = tsv_to_matrix(user_item_side_information_file)
     hierarchy = json.loads(open(hierarchy_file).read())
 
-    lda = LDAHierarquical(B, hierarchy, topics=30)
+    lda = LDAHierarquical(B, hierarchy, topics=15)
+
+    #####REMOVE_IT
+    def important_topics(x, topics):
+        if not x:
+            return x
+        transf = [ (i, j) for i, j in enumerate(x) ]
+        transf = sorted(transf, cmp=lambda x, y: cmp(x[1], y[1]))
+        return [ i[0] for i in transf[:topics] ]
+
+    topics = 3
+
+    coincidencias = []
+    for user in range(1, 101):
+        # Topicos do usuario 10
+        user_topics = important_topics(lda.model['users'][user], topics)
+
+        # Topicos das cidades de teste do usuario 10
+        T = tsv_to_matrix(test_file)
+        cities = T[user].nonzero()[0]
+
+        cities_topics = [ important_topics(lda.model['cities'].get(city, []), topics) for city in cities ]
+
+
+        total = 0
+        topics_compared = 0
+        coinc = 0
+        for city_topic in cities_topics:
+            if city_topic:
+                coinc += len(set(user_topics) & set(city_topic))
+                topics_compared += len(user_topics)
+                total += 1
+            else:
+                pass
+
+        if total:
+            perc = (coinc/float(topics_compared))
+        else:
+            perc = -1
+
+        coincidencias.append([coinc, topics_compared, perc])
+
+    aa = open('/tmp/coincidencias.json', 'w')
+    aa.write(json.dumps(coincidencias))
+    aa.close()
+    #####
 
     W = slim_train(A)
 
