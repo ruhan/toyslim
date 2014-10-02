@@ -52,14 +52,10 @@ def generate_subitem_hierarchy(K, W, hierarchy):
                 continue
 
             if K[i, j] != 0:
-                # TODO: check why we need it!
-                try:
-                    if Wline[iw, jw] == 0:
-                        Wline[iw, jw] = [K[i, j]]
-                    else:
-                        Wline[iw, jw].append(K[i, j])
-                except IndexError:
-                    continue
+                if isinstance(Wline[iw, jw], int) or isinstance(Wline[iw, jw], float):
+                    Wline[iw, jw] = [K[i, j]]
+                else:
+                    Wline[iw, jw].append(K[i, j])
 
     return Wline
 
@@ -89,6 +85,10 @@ def hierarchy_factory(hierarchy_file):
     return f
 
 def normalize_wline(Wline):
+    """
+    Make a norm of all vectors contained in each position of the 3d matrix Wline
+    and return a new 2D matrix.
+    """
     WlineNormalized = np.zeros(Wline.shape)
 
     for i in xrange(Wline.shape[0]):
@@ -96,6 +96,17 @@ def normalize_wline(Wline):
             if Wline[i, j] != 0:
                 WlineNormalized[i, j] = np.linalg.norm(Wline[i, j])
     return WlineNormalized
+
+def foo(Wline, value=2):
+    """
+    FIXME TODO: REMOVE IT!
+    """
+    for i in xrange(Wline.shape[0]):
+        for j in xrange(Wline.shape[1]):
+            if isinstance(Wline[i, j], list):
+                if len(Wline[i, j]) == 1:
+                    Wline[i, j] = 0
+    return Wline
 
 def main(train_file, user_sideinformation_file, hierarchy_file, test_file):
     A = tsv_to_matrix(train_file)
@@ -110,15 +121,15 @@ def main(train_file, user_sideinformation_file, hierarchy_file, test_file):
     Wline = generate_subitem_hierarchy(K, W, hierarchy)
     WlineNorm = normalize_wline(Wline)
 
-    recommendations = slim_recommender(A, WlineNorm)
-    #recommendations = slim_recommender(A, W + 1 * WlineNorm)
-
-    # REMOVA_ME Teste para ver se o preditor eh justo ou nao
-    user_cities = np.array([ map(hierarchy, B[i].nonzero()[0].tolist()) for i in range(B.shape[0]) ])
-    G = tsv_to_matrix(test_file)
-    print 'TEM QUE DAR VAZIO: ', set(G[1].nonzero()[0]) & set(user_cities[1])
-    ### ---- FIM REMOVAME
+    #recommendations = slim_recommender(A, W + 0.2 * WlineNorm)
     import pdb;pdb.set_trace()
+    recommendations = slim_recommender(A, WlineNorm)
+
+    # See if the predictor is just of not
+    #user_cities = np.array([ map(hierarchy, B[i].nonzero()[0].tolist()) for i in range(B.shape[0]) ])
+    #G = tsv_to_matrix(test_file)
+    #print 'TEM QUE DAR VAZIO: ', set(G[1].nonzero()[0]) & set(user_cities[1])
+    ### ---- FIM REMOVAME
 
     compute_precision(recommendations, test_file)
 

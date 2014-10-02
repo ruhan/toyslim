@@ -16,24 +16,33 @@ def main(train_file, user_item_side_information_file, hierarchy_file, test_file)
     B = tsv_to_matrix(user_item_side_information_file)
     hierarchy = json.loads(open(hierarchy_file).read())
 
-    lda = LDAHierarquical(B, hierarchy, topics=20)
-
     W = slim_train(A)
 
-    recommendations_lda = slim_lda_recommender(A, W, lda)
-    compute_precision(recommendations_lda, test_file)
+    ## LDA
+    #lda = LDAHierarquical(B, hierarchy, topics=20)
+    #recommendations_lda = slim_lda_recommender(A, W, lda)
+    #compute_precision(recommendations_lda, test_file)
+    ###
 
     recommendations_slim = slim_recommender(A, W)
+    ## HSLIM
+    from hslim import handle_user_bias, hierarchy_factory, normalize_wline, generate_subitem_hierarchy
+    hierarchy = hierarchy_factory('data/hierarchy.json')
+    K = slim_train(handle_user_bias(B))
+    Wline = generate_subitem_hierarchy(K, W, hierarchy)
+    WlineNorm = normalize_wline(Wline)
+    recommendations_other = slim_recommender(A, WlineNorm)
+    ###
 
     kendall_tau_values = []
     differences_values = []
 
     for u in recommendations_slim.iterkeys():
         ranking_slim = recommendations_slim[u][:RANKING_UNTIL]
-        ranking_lda = recommendations_lda[u][:RANKING_UNTIL]
+        ranking_other = recommendations_other[u][:RANKING_UNTIL]
 
-        kendall_tau_values.append(kendalltau(ranking_slim, ranking_lda))
-        differences_values.append(RANKING_UNTIL-len(set(ranking_slim) & set(ranking_lda)))
+        kendall_tau_values.append(kendalltau(ranking_slim, ranking_other))
+        differences_values.append(RANKING_UNTIL-len(set(ranking_slim) & set(ranking_other)))
 
     # Differences
     plt.hist(differences_values)
