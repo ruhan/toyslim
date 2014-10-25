@@ -40,6 +40,7 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
     # Following cSLIM proposal on creating an M' matrix = [ M, FT]
     # * alpha is used to control relative importance of the side information
     #Balpha = np.sqrt(alpha) * B
+    B = B[:, :-3]
     Balpha = B
 
     Mline = np.concatenate((A, Balpha))
@@ -68,8 +69,13 @@ def main(train_file, user_sideinformation_file, test_file):
     A = tsv_to_matrix(train_file)
     B = tsv_to_matrix(user_sideinformation_file)
 
-    useritem_featureitem = np.concatenate((A, B))
-    import pdb;pdb.set_trace()
+    """
+    from util import mm2csr
+    mm2csr(A, '/tmp/train.mat')
+    mm2csr(useritem_featureitem, '/tmp/train_feature.mat')
+    C = tsv_to_matrix(test_file)
+    mm2csr(C, '/tmp/test.mat')
+    """
 
     W = sslim_train(A, B)
 
@@ -79,9 +85,13 @@ def main(train_file, user_sideinformation_file, test_file):
 
 
 if __name__ == '__main__':
-    #main('data/train_100.tsv', 'data/item_side_information_100.tsv', 'data/test_100.tsv')
-    #train_file, test_file = split_train_test('data/100_without_stemming/usuarios_atracoes.tsv')
-    #main(train_file, 'data/100_without_stemming/palavras_atracoes.tsv', test_file)
-    main('data/100_without_stemming/usuarios_atracoes_train.tsv',
-         'data/100_without_stemming/palavras_atracoes.tsv',
-         'data/100_without_stemming/usuarios_atracoes_test.tsv')
+    #train_file, test_file = split_train_test('data/cidades/100_without_stemming_less_outliers/usuarios_cidades.tsv')
+    #import pdb;pdb.set_trace()
+    main('data/cidades/100_without_stemming_less_outliers/usuarios_cidades_train.tsv',
+         'data/cidades/100_without_stemming_less_outliers/palavras_cidades.tsv',
+         'data/cidades/100_without_stemming_less_outliers/usuarios_cidades_test.tsv')
+    """
+    main('data/atracoes/10/usuarios_atracoes_train.tsv',
+         'data/atracoes/10/palavras_atracoes.tsv',
+         'data/atracoes/10/usuarios_atracoes_test.tsv')
+    """
