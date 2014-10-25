@@ -135,5 +135,8 @@ def main(train_file, user_sideinformation_file, hierarchy_file, test_file):
 
 
 if __name__ == '__main__':
+    print 'This algorithm is not ready to use'
+    import sys
+    sys.exit(0)
     main('data/train_100.tsv', 'data/user_item_side_information_100.tsv',
          'data/hierarchy.json', 'data/test_100.tsv')
