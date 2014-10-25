@@ -1,4 +1,6 @@
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, csr_matrix
+import PIL
+from matplotlib import pyplot as plt
 import random
 
 
@@ -32,7 +34,7 @@ def tsv_to_matrix(f, rows=None, cols=None):
             v = float(v.strip())
             data[x, y] = v
 
-    return data.toarray()
+    return csr_matrix(data)
 
 def show_matplot_fig():
     """

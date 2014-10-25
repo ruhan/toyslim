@@ -10,6 +10,7 @@ from metrics import compute_precision
 import multiprocessing
 import ctypes
 import sys
+from scipy.sparse import vstack
 
 train_file, user_sideinformation_file, test_file = sys.argv[1:]
 
@@ -36,7 +37,7 @@ def work(params, W=shared_array):
     # We need to remove the column j before training
     M[:, j] = 0
 
-    model.fit(M, mlinej.ravel())
+    model.fit(M, mlinej.toarray().ravel())
 
     # We need to reinstate the matrix
     M[:, j] = mlinej
@@ -80,10 +81,12 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
     # Following cSLIM proposal on creating an M' matrix = [ M, FT]
     # * alpha is used to control relative importance of the side information
     #Balpha = np.sqrt(alpha) * B
-    B = B[:, :-3]
+    import pdb;pdb.set_trace()
+    B = B[:, :-1]
     Balpha = B
 
-    Mline = np.concatenate((A, Balpha))
+    #Mline = np.concatenate((A, Balpha))
+    Mline = vstack((A, Balpha), format='csr')
 
     # Fit each column of W separately. We put something in each positions of W
     # to allow us direct indexing of each position in parallel
