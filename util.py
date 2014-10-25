@@ -1,6 +1,4 @@
 from scipy.sparse import lil_matrix
-import PIL
-from matplotlib import pyplot as plt
 import random
 
 
@@ -42,6 +40,9 @@ def show_matplot_fig():
 
     We are using it to avoid installing several libraries only to show a graphic
     """
+    import PIL
+    from matplotlib import pyplot as plt
+
     path = './img/test.png'
 
     plt.savefig(path)

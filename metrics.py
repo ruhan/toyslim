@@ -1,4 +1,8 @@
-from cdecimal import Decimal
+try:
+    from cdecimal import Decimal
+except ImportError:
+    from decimal import Decimal
+
 PRECISION_AT = 20
 
 def compute_precision(recommendations, test_file):
