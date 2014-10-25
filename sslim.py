@@ -1,3 +1,7 @@
+"""
+cSLIM basic implementation. To understand deeply how it works we encourage you to
+read "Sparse Linear Methods with Side Information for Top-N Recommendations"
+"""
 from sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
