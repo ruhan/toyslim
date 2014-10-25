@@ -71,4 +71,5 @@ def main(train_file, test_file):
     compute_precision(recommendations, test_file)
 
 if __name__ == '__main__':
-    main('data/100_without_stemming/usuarios_atracoes_train.tsv', 'data/100_without_stemming/usuarios_atracoes_test.tsv')
+    main('data/cidades/100_without_stemming_less_outliers/usuarios_cidades_train.tsv',
+         'data/cidades/100_without_stemming_less_outliers/usuarios_cidades_test.tsv')
