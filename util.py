@@ -1,6 +1,4 @@
 from scipy.sparse import lil_matrix, csr_matrix
-import PIL
-from matplotlib import pyplot as plt
 import random
 
 
