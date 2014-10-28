@@ -14,11 +14,11 @@ def slim_recommender(A, W):
     # Organizing A_hat matrix to simplify Top-N recommendation
     for u in range(1, m):
         for i in range(1, n):
-            v = A_hat[u][i]
+            v = A_hat[(u,i)]
             if v > 0:
                 # NOTE: it only recommends items that the user haven't rated yet
                 # Because that, we ignore already rated items
-                if A[u][i] == 0:
+                if A[(u, i)] == 0:
                     if u not in recommendations:
                         recommendations[u] = [(i, v)]
                     else:
