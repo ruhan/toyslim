@@ -1,12 +1,12 @@
-from scipy.sparse import csr_matrix
-
 def slim_recommender(A, W):
     """
     Generate the A_hat recommendations matrix
     """
     # XXX: I don't know why, but we need to use csr conversion here. Without it
     # we are receiving a ValueError
-    A_hat = csr_matrix(A) * W
+    # Saving memory
+    # A_hat = A * W
+    A_hat = W = A * W
 
     recommendations = {}
     m, n = A.shape

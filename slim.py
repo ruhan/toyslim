@@ -7,6 +7,8 @@ from util import tsv_to_matrix
 from metrics import compute_precision
 from recommender import slim_recommender
 import numpy as np
+from scipy.sparse import lil_matrix
+
 
 def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
     """
@@ -41,14 +43,17 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
     m, n = A.shape
 
     # Fit each column of W separately
-    W = []
+    W = lil_matrix((n, n))
 
     for j in range(n):
+        if j % 50 == 0:
+            print('-> %2.2f%%' % ((j/float(n)) * 100))
+
         aj = A[:, j].copy()
         # We need to remove the column j before training
         A[:, j] = 0
 
-        model.fit(A, aj.ravel())
+        model.fit(A, aj.toarray().ravel())
         # We need to reinstate the matrix
         A[:, j] = aj
 
@@ -56,9 +61,11 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
 
         # Removing negative values because it makes no sense in our approach
         w[w<0] = 0
-        W.append(w)
 
-    return np.array(W)
+        for el in w.nonzero()[0]:
+            W[(el, j)] = w[el]
+
+    return W
 
 
 def main(train_file, test_file):
@@ -71,5 +78,6 @@ def main(train_file, test_file):
     compute_precision(recommendations, test_file)
 
 if __name__ == '__main__':
-    main('data/cidades/100_without_stemming_less_outliers/usuarios_cidades_train.tsv',
-         'data/cidades/100_without_stemming_less_outliers/usuarios_cidades_test.tsv')
+    main('data/cidades/todos_com_stemming/usuarios_cidades_train.tsv',
+         'data/cidades/todos_com_stemming/usuarios_cidades_test.tsv')
+

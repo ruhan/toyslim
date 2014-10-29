@@ -7,6 +7,8 @@ import numpy as np
 from recommender import slim_recommender
 from util import tsv_to_matrix, split_train_test
 from metrics import compute_precision
+from scipy.sparse import vstack
+from scipy.sparse import lil_matrix
 
 
 def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
@@ -38,24 +40,30 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         l1_ratio=l1_ratio
     )
 
-    # Fit each column of W separately
-    W = []
-
     # Following cSLIM proposal on creating an M' matrix = [ M, FT]
     # * alpha is used to control relative importance of the side information
     #Balpha = np.sqrt(alpha) * B
     B = B[:, :-3]
     Balpha = B
 
-    Mline = np.concatenate((A, Balpha))
+    Mline = vstack((A, Balpha), format='lil')
+    m, n = A.shape
 
-    for j in range(Mline.shape[1]):
+    # Fit each column of W separately
+    W = lil_matrix((n, n))
+
+    columns = Mline.shape[1]
+
+    for j in range(columns):
+        if j % 50 == 0:
+            print '-> %2.2f%%' % ((j/float(columns)) * 100)
+
         mlinej = Mline[:, j].copy()
 
         # We need to remove the column j before training
         Mline[:, j] = 0
 
-        model.fit(Mline, mlinej.ravel())
+        model.fit(Mline, mlinej.toarray().ravel())
 
         # We need to reinstate the matrix
         Mline[:, j] = mlinej
@@ -65,7 +73,8 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         # Removing negative values because it makes no sense in our approach
         w[w<0] = 0
 
-        W.append(w)
+        for el in w.nonzero()[0]:
+            W[(el, j)] = w[el]
 
     return W
 
@@ -89,8 +98,9 @@ def main(train_file, user_sideinformation_file, test_file):
 
 
 if __name__ == '__main__':
-    #train_file, test_file = split_train_test('data/cidades/100_without_stemming_less_outliers/usuarios_cidades.tsv')
-    #import pdb;pdb.set_trace()
+    train_file, test_file = split_train_test(
+            'data/cidades_categorias/100_cidades_minimas/categorias_usuarios_cidades.tsv')
+    import pdb;pdb.set_trace()
     main('data/cidades/100_without_stemming_less_outliers/usuarios_cidades_train.tsv',
          'data/cidades/100_without_stemming_less_outliers/palavras_cidades.tsv',
          'data/cidades/100_without_stemming_less_outliers/usuarios_cidades_test.tsv')

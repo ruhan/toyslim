@@ -1,22 +1,20 @@
 """
-cSLIM Parallel implementation. To understand deeply how it works we encourage you to
-read "Sparse Linear Methods with Side Information for Top-N Recommendations"
+SLIM Parallel implementation. To understand deeply how it works we encourage you to
+read "SLIM: Sparse LInear Methods for Top-N Recommender Systems".
 """
 from sklearn.linear_model import SGDRegressor
-import numpy as np
-from recommender import slim_recommender
-from util import tsv_to_matrix, split_train_test, generate_slices
+from util import tsv_to_matrix, generate_slices
 from metrics import compute_precision
+from recommender import slim_recommender
+import numpy as np
 import multiprocessing
 import ctypes
 import sys
-from scipy.sparse import vstack
 
-train_file, user_sideinformation_file, test_file = sys.argv[1:]
+train_file, test_file = sys.argv[1:]
 
 # Loading matrices
 A = tsv_to_matrix(train_file)
-B = tsv_to_matrix(user_sideinformation_file)
 
 # Loading shared array to be used in results
 shared_array_base = multiprocessing.Array(ctypes.c_double, A.shape[1]**2)
@@ -57,7 +55,8 @@ def work(params, W=shared_array):
             W[(el, j)] = w[el]
 
 
-def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
+
+def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
     """
     Computes W matrix of SLIM
 
@@ -83,23 +82,15 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         penalty='elasticnet',
         fit_intercept=False,
         alpha=alpha,
-        l1_ratio=l1_ratio
+        l1_ratio=l1_ratio,
     )
 
-    # Following cSLIM proposal on creating an M' matrix = [ M, FT]
-    # * alpha is used to control relative importance of the side information
-    #Balpha = np.sqrt(alpha) * B
-    Balpha = B
-    Mline = vstack((A, Balpha), format='lil')
-
-    # Fit each column of W separately. We put something in each positions of W
-    # to allow us direct indexing of each position in parallel
-    total_columns = Mline.shape[1]
+    total_columns = A.shape[1]
     ranges = generate_slices(total_columns)
     separated_tasks = []
 
     for from_j, to_j in ranges:
-        separated_tasks.append([from_j, to_j, Mline, model])
+        separated_tasks.append([from_j, to_j, A, model])
 
     pool = multiprocessing.Pool()
     pool.map(work, separated_tasks)
@@ -108,15 +99,8 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
 
     return shared_array
 
-
-W = sslim_train(A, B)
+W = slim_train(A)
 
 recommendations = slim_recommender(A, W)
 
 compute_precision(recommendations, test_file)
-
-"""
-main('data/atracoes/10/usuarios_atracoes_train.tsv',
-     'data/atracoes/10/palavras_atracoes.tsv',
-     'data/atracoes/10/usuarios_atracoes_test.tsv')
-"""
