@@ -1,7 +1,4 @@
-try:
-    from cdecimal import Decimal
-except ImportError:
-    from decimal import Decimal
+from decimal import Decimal
 
 PRECISION_AT = 20
 
@@ -23,6 +20,7 @@ def compute_precision(recommendations, test_file):
             else:
                 user_item[u] = set([i])
 
+    precisions = []
     # Computing
     total_users = Decimal(len(recommendations.keys()))
     for at in range(1, PRECISION_AT+1):
@@ -34,6 +32,10 @@ def compute_precision(recommendations, test_file):
             mean += precision
 
         print 'Average Precision @%s: %s' % (at, (mean/total_users))
+        precisions.append([at, (mean/total_users)])
+
+    return precisions
+
 
 
 def compute_precision_as_an_oracle(recommendations, test_file):

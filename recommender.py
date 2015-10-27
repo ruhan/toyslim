@@ -5,8 +5,8 @@ def slim_recommender(A, W):
     # XXX: I don't know why, but we need to use csr conversion here. Without it
     # we are receiving a ValueError
     # Saving memory
-    # A_hat = A * W
-    A_hat = W = A * W
+    W = A * W
+    A_hat = W
 
     recommendations = {}
     m, n = A.shape

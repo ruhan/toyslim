@@ -5,7 +5,7 @@ read "Sparse Linear Methods with Side Information for Top-N Recommendations"
 from sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
-from util import tsv_to_matrix, split_train_test
+from util import tsv_to_matrix, split_train_test, make_compatible
 from metrics import compute_precision
 from scipy.sparse import vstack
 from scipy.sparse import lil_matrix
@@ -82,6 +82,7 @@ def main(train_file, user_sideinformation_file, test_file):
     A = tsv_to_matrix(train_file)
     B = tsv_to_matrix(user_sideinformation_file)
 
+    A, B = make_compatible(A, B)
     """
     from util import mm2csr
     mm2csr(A, '/tmp/train.mat')
@@ -98,12 +99,9 @@ def main(train_file, user_sideinformation_file, test_file):
 
 
 if __name__ == '__main__':
-    train_file, test_file = split_train_test(
-            'data/cidades_categorias/100_cidades_minimas/categorias_usuarios_cidades.tsv')
-    import pdb;pdb.set_trace()
-    main('data/cidades/100_without_stemming_less_outliers/usuarios_cidades_train.tsv',
-         'data/cidades/100_without_stemming_less_outliers/palavras_cidades.tsv',
-         'data/cidades/100_without_stemming_less_outliers/usuarios_cidades_test.tsv')
+    main('data/usuarios_imagens_train.tsv',
+         'data/sideinformation_visuais.tsv',
+         'data/usuarios_imagens_train.tsv')
     """
     main('data/atracoes/10/usuarios_atracoes_train.tsv',
          'data/atracoes/10/palavras_atracoes.tsv',

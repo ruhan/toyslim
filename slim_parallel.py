@@ -21,7 +21,6 @@ shared_array_base = multiprocessing.Array(ctypes.c_double, A.shape[1]**2)
 shared_array = np.ctypeslib.as_array(shared_array_base.get_obj())
 shared_array = shared_array.reshape(A.shape[1], A.shape[1])
 
-# We create a work function to fit each one of the columns of our W matrix,
 # because in SLIM each column is independent we can use make this work in
 # parallel
 def work(params, W=shared_array):

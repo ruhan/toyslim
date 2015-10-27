@@ -5,18 +5,54 @@ read "Sparse Linear Methods with Side Information for Top-N Recommendations"
 from sklearn.linear_model import SGDRegressor
 import numpy as np
 from recommender import slim_recommender
-from util import tsv_to_matrix, split_train_test, generate_slices
+from util import (tsv_to_matrix, split_train_test, generate_slices,
+                  make_compatible, normalize_values, save_matrix)
 from metrics import compute_precision
 import multiprocessing
 import ctypes
 import sys
 from scipy.sparse import vstack
+import argparse
+import datetime
+import json
 
-train_file, user_sideinformation_file, test_file = sys.argv[1:]
+print '>>> Start: %s' % datetime.datetime.now()
+
+# Parsing arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--train', help='Matrix file to train the model',
+                                        required=True)
+parser.add_argument('--test', help='Matrix file to test the model',
+                                        required=True)
+parser.add_argument('--side_information',
+                                        help='Side information to improve learning', required=True)
+parser.add_argument('--beta', type=float, help=('Parameter that gives weight to the '
+                                              'side_information matrix'))
+parser.add_argument('--output', help=('File to put the results'), required=True)
+parser.add_argument('--normalize', type=int, help=('Parameter that defines if data'
+                    'in side information matrix will be normalized'),
+                    required=False)
+parser.add_argument('--fold', type=int, help=('Parameter only to mark the fold '
+                    'that is being calculated'),
+                    required=False)
+args = parser.parse_args()
+
+train_file = args.train
+user_sideinformation_file = args.side_information
+output = args.output
+test_file = args.test
+beta = args.beta or 0.011
+normalize = args.normalize
+fold = args.fold or 0
 
 # Loading matrices
 A = tsv_to_matrix(train_file)
 B = tsv_to_matrix(user_sideinformation_file)
+
+if normalize:
+    B = normalize_values(B)
+
+A, B = make_compatible(A, B)
 
 # Loading shared array to be used in results
 shared_array_base = multiprocessing.Array(ctypes.c_double, A.shape[1]**2)
@@ -57,7 +93,7 @@ def work(params, W=shared_array):
             W[(el, j)] = w[el]
 
 
-def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
+def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001, beta=0.0011):
     """
     Computes W matrix of SLIM
 
@@ -86,10 +122,9 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         l1_ratio=l1_ratio
     )
 
-    # Following cSLIM proposal on creating an M' matrix = [ M, FT]
-    # * alpha is used to control relative importance of the side information
-    #Balpha = np.sqrt(alpha) * B
-    Balpha = B
+    # Following cSLIM proposal on creating an M' matrix = [ M, FT ]
+    # * beta is used to control relative importance of the side information
+    Balpha = beta * B
     Mline = vstack((A, Balpha), format='lil')
 
     # Fit each column of W separately. We put something in each positions of W
@@ -109,14 +144,18 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
     return shared_array
 
 
-W = sslim_train(A, B)
+W = sslim_train(A, B, beta=beta)
+
+save_matrix(W, user_sideinformation_file.replace('.tsv', 'beta%s_fold%s.Wmatrix.tsv' % (beta, fold)))
+
+del B
 
 recommendations = slim_recommender(A, W)
 
-compute_precision(recommendations, test_file)
+precisions = compute_precision(recommendations, test_file)
 
-"""
-main('data/atracoes/10/usuarios_atracoes_train.tsv',
-     'data/atracoes/10/palavras_atracoes.tsv',
-     'data/atracoes/10/usuarios_atracoes_test.tsv')
-"""
+print '>>> End: %s' % datetime.datetime.now()
+
+o = open(output, 'w')
+o.write(json.dumps(precisions))
+o.close()
