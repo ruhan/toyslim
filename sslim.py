@@ -3,12 +3,12 @@ cSLIM basic implementation. To understand deeply how it works we encourage you t
 read "Sparse Linear Methods with Side Information for Top-N Recommendations"
 """
 from sklearn.linear_model import SGDRegressor
-import numpy as np
-from recommender import slim_recommender
-from util import tsv_to_matrix, split_train_test, make_compatible
-from metrics import compute_precision
+from util.recommender import slim_recommender, normalize_values
+from util import tsv_to_matrix, make_compatible, parse_args
+from util.metrics import compute_precision
 from scipy.sparse import vstack
 from scipy.sparse import lil_matrix
+import simplejson as json
 
 
 def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
@@ -30,8 +30,8 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
 
         http://glaros.dtc.umn.edu/gkhome/slim/overview
     """
-    alpha = l1_reg+l2_reg
-    l1_ratio = l1_reg/alpha
+    alpha = l1_reg + l2_reg
+    l1_ratio = l1_reg / alpha
 
     model = SGDRegressor(
         penalty='elasticnet',
@@ -56,7 +56,7 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
 
     for j in range(columns):
         if j % 50 == 0:
-            print '-> %2.2f%%' % ((j/float(columns)) * 100)
+            print '-> %2.2f%%' % ((j / float(columns)) * 100)
 
         mlinej = Mline[:, j].copy()
 
@@ -71,39 +71,30 @@ def sslim_train(A, B, l1_reg=0.001, l2_reg=0.0001):
         w = model.coef_
 
         # Removing negative values because it makes no sense in our approach
-        w[w<0] = 0
+        w[w < 0] = 0
 
         for el in w.nonzero()[0]:
             W[(el, j)] = w[el]
 
     return W
 
-def main(train_file, user_sideinformation_file, test_file):
+
+def main(train_file, user_sideinformation_file, test_file, normalize):
     A = tsv_to_matrix(train_file)
     B = tsv_to_matrix(user_sideinformation_file)
 
+    if normalize:
+        B = normalize_values(B)
+
     A, B = make_compatible(A, B)
-    """
-    from util import mm2csr
-    mm2csr(A, '/tmp/train.mat')
-    mm2csr(useritem_featureitem, '/tmp/train_feature.mat')
-    C = tsv_to_matrix(test_file)
-    mm2csr(C, '/tmp/test.mat')
-    """
 
     W = sslim_train(A, B)
 
     recommendations = slim_recommender(A, W)
 
-    compute_precision(recommendations, test_file)
+    return compute_precision(recommendations, test_file)
 
 
-if __name__ == '__main__':
-    main('data/usuarios_imagens_train.tsv',
-         'data/sideinformation_visuais.tsv',
-         'data/usuarios_imagens_train.tsv')
-    """
-    main('data/atracoes/10/usuarios_atracoes_train.tsv',
-         'data/atracoes/10/palavras_atracoes.tsv',
-         'data/atracoes/10/usuarios_atracoes_test.tsv')
-    """
+args = parse_args(side_information=True)
+precisions = main(args.train, args.side_information, args.test, args.normalize)
+open(args.output, 'w').write(json.dumps(precisions))

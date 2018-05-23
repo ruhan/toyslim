@@ -4,22 +4,24 @@ read "SLIM: Sparse LInear Methods for Top-N Recommender Systems".
 """
 from sklearn.linear_model import SGDRegressor
 from util import tsv_to_matrix, generate_slices
-from metrics import compute_precision
-from recommender import slim_recommender
+from util.metrics import compute_precision
+from util.recommender import slim_recommender
 import numpy as np
 import multiprocessing
 import ctypes
-import sys
+from util import parse_args
+import simplejson as json
 
-train_file, test_file = sys.argv[1:]
+args = parse_args()
 
 # Loading matrices
-A = tsv_to_matrix(train_file)
+A = tsv_to_matrix(args.train)
 
 # Loading shared array to be used in results
-shared_array_base = multiprocessing.Array(ctypes.c_double, A.shape[1]**2)
+shared_array_base = multiprocessing.Array(ctypes.c_double, A.shape[1] ** 2)
 shared_array = np.ctypeslib.as_array(shared_array_base.get_obj())
 shared_array = shared_array.reshape(A.shape[1], A.shape[1])
+
 
 # because in SLIM each column is independent we can use make this work in
 # parallel
@@ -33,8 +35,11 @@ def work(params, W=shared_array):
     for j in range(from_j, to_j):
         counter += 1
         if counter % 10 == 0:
-            print 'Range %s -> %s: %2.2f%%' % (from_j, to_j,
-                            (counter/float(to_j - from_j)) * 100)
+            print 'Range %s -> %s: %2.2f%%' % (
+                from_j,
+                to_j,
+                (counter / float(to_j - from_j)) * 100
+            )
         mlinej = M[:, j].copy()
 
         # We need to remove the column j before training
@@ -48,11 +53,10 @@ def work(params, W=shared_array):
         w = model.coef_
 
         # Removing negative values because it makes no sense in our approach
-        w[w<0] = 0
+        w[w < 0] = 0
 
         for el in w.nonzero()[0]:
             W[(el, j)] = w[el]
-
 
 
 def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
@@ -74,8 +78,8 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
 
         http://glaros.dtc.umn.edu/gkhome/slim/overview
     """
-    alpha = l1_reg+l2_reg
-    l1_ratio = l1_reg/alpha
+    alpha = l1_reg + l2_reg
+    l1_ratio = l1_reg / alpha
 
     model = SGDRegressor(
         penalty='elasticnet',
@@ -98,8 +102,11 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
 
     return shared_array
 
+
 W = slim_train(A)
 
 recommendations = slim_recommender(A, W)
 
-compute_precision(recommendations, test_file)
+
+precisions = compute_precision(recommendations, args.test)
+open(args.output, 'w').write(json.dumps(precisions))

@@ -9,8 +9,10 @@ algorithm.
 """
 from slim import slim_train
 from util import tsv_to_matrix
-from metrics import compute_precision_as_an_oracle
-from recommender import slim_recommender
+from util.metrics import compute_precision_as_an_oracle
+from util.recommender import slim_recommender
+from util import parse_args
+import simplejson as json
 
 
 def main(train_file, test_file):
@@ -20,7 +22,9 @@ def main(train_file, test_file):
 
     recommendations = slim_recommender(A, W)
 
-    compute_precision_as_an_oracle(recommendations, test_file)
+    return compute_precision_as_an_oracle(recommendations, test_file)
 
-if __name__ == '__main__':
-    main('data/train_100.tsv', 'data/test_100.tsv')
+
+args = parse_args()
+precisions = main(args.train, args.test)
+open(args.output, 'w').write(json.dumps(precisions))

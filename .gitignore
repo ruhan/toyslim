@@ -4,3 +4,4 @@ octave/
 img/
 *.pyc
 *.un~
+*.swp

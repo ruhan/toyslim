@@ -1,6 +1,5 @@
 from scipy.sparse import lil_matrix
 import random
-import math
 
 
 def tsv_to_matrix(f, rows=None, cols=None):
@@ -9,8 +8,8 @@ def tsv_to_matrix(f, rows=None, cols=None):
     """
     # Read the size of our matrix
     # We know it can't be the best way to do that, but it is the simplest
-    user_max_value = rows-1 if rows is not None else 0
-    item_max_value = cols-1 if cols is not None else 0
+    user_max_value = rows - 1 if rows is not None else 0
+    item_max_value = cols - 1 if cols is not None else 0
 
     with open(f) as input_file:
         for line in input_file:
@@ -99,6 +98,7 @@ def split_train_test(file_tsv):
 
     return file_train, file_test
 
+
 def split_train_validation_test(file_tsv):
     """
     Split a tsv file into two others:
@@ -155,6 +155,7 @@ def split_train_validation_test(file_tsv):
 
     return file_train, file_validation, file_test
 
+
 def cross_split_train_test(file_tsv):
     """
     Split a tsv file into two others (with cross validation):
@@ -173,14 +174,14 @@ def cross_split_train_test(file_tsv):
         random.shuffle(data)
         t = len(data)
 
-        f1, f2, f3, f4, f5 = int(t*.2), int(t*.4), int(t*.6), int(t*.8), t-1
+        f1, f2, f3, f4, f5 = (int(t * .2), int(t * .4), int(t * .6),
+                              int(t * .8), t - 1)
 
         fold1.append(data[:f1])
         fold2.append(data[f1:f2])
         fold3.append(data[f2:f3])
         fold4.append(data[f3:f4])
         fold5.append(data[f4:f5])
-
 
     def store_matrix(data_list, ofile):
         result = []
@@ -196,7 +197,6 @@ def cross_split_train_test(file_tsv):
     folds = [fold1, fold2, fold3, fold4, fold5]
 
     files_train = []
-    files_test = []
     file_without_ext = file_tsv.rsplit('.', 1)[0]
 
     for number in range(len(folds)):
@@ -221,6 +221,7 @@ def cross_split_train_test(file_tsv):
         files_train.append(file_test)
 
     return file_train, file_test
+
 
 def mm2csr(M, ofile):
     """
@@ -253,7 +254,7 @@ def generate_slices(total_columns):
 
     cores = cpu_count()
 
-    segment_length = total_columns/cores
+    segment_length = total_columns / cores
 
     ranges = []
     now = 0
@@ -298,10 +299,10 @@ def make_compatible(A, B):
                     data[i].pop(pos)
                     if pos == len(rows[i]):
                             continue
-                for pos2 in xrange(pos,len(rows[i])):
+                for pos2 in xrange(pos, len(rows[i])):
                     rows[i][pos2] -= 1
 
-        W._shape = (W._shape[0], W._shape[1]-len(col_list))
+        W._shape = (W._shape[0], W._shape[1] - len(col_list))
         return W
 
     na = A.shape[1]
@@ -310,19 +311,21 @@ def make_compatible(A, B):
     if na > nb:
         els_to_remove = []
 
-        for i in reversed(range(na-nb)):
-            els_to_remove.append(i+nb)
+        for i in reversed(range(na - nb)):
+            els_to_remove.append(i + nb)
 
         removecols(A, els_to_remove)
+
     elif na < nb:
         els_to_remove = []
 
-        for i in reversed(range(nb-na)):
-            els_to_remove.append(i+na)
+        for i in reversed(range(nb - na)):
+            els_to_remove.append(i + na)
 
         removecols(B, els_to_remove)
 
     return A, B
+
 
 def normalize_values(M):
     """
@@ -332,13 +335,13 @@ def normalize_values(M):
     from sklearn.preprocessing import normalize
     return normalize(M).tolil()
     # --
-    value_min = min([ min(i) for i in M.data if i ])
-    value_max = max([ max(i) for i in M.data if i ])
+    value_min = min([min(i) for i in M.data if i])
+    value_max = max([max(i) for i in M.data if i])
 
     if value_min == value_max:
         value_min = 0
 
-    interval = float(value_max-value_min)
+    interval = float(value_max - value_min)
 
     for row in M.data:
         for col in xrange(len(row)):
@@ -356,10 +359,9 @@ def save_matrix(M, path, binary=False):
     result = []
     first = True
     f = open(path, 'w')
-    #import json; vals = json.loads(open('/tmp/vals.json').read())
+
     for i in xrange(width):
         for j in M[i].nonzero()[-1]:
-            #if M[i, j] >= vals[i]:
             if binary:
                 result.append('%s %s %s' % (i, j, '1'))
             else:
@@ -386,40 +388,46 @@ def save_matrix(M, path, binary=False):
     f.close()
 
 
-def geo_distance(lat1, long1, lat2, long2):
-    """
-    Convert latitude and longitude to spherical coordinates in radians.
-    """
-    degrees_to_radians = math.pi/180.0
+def parse_args(beta=False, side_information=False):
+    import argparse
+    # Parsing arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--train',
+        help='Matrix file to train the model',
+        required=True
+    )
+    parser.add_argument(
+        '--test',
+        help='Matrix file to test the model',
+        required=True
+    )
+    if side_information:
+        parser.add_argument(
+            '--side_information',
+            help='Side information to improve learning',
+            required=True
+        )
+    parser.add_argument(
+        '--beta',
+        type=float,
+        help=('Parameter that gives weight to the side_information matrix')
+    )
+    parser.add_argument(
+        '--output',
+        help=('File to put the results'),
+        required=True
+    )
 
-    # phi = 90 - latitudedade
-    phi1 = (90.0 - lat1)*degrees_to_radians
-    phi2 = (90.0 - lat2)*degrees_to_radians
+    if side_information:
+        parser.add_argument(
+            '--normalize',
+            type=int,
+            help=('Parameter that defines if data '
+                  'in side information matrix will be normalized'),
+            required=False
+        )
 
-    # theta = longitude
-    theta1 = long1*degrees_to_radians
-    theta2 = long2*degrees_to_radians
-
-    # Compute spherical distance from spherical coordinates.
-
-    # For two locations in spherical coordinates
-    # (1, theta, phi) and (1, theta, phi)
-    # cosine( arc length ) =
-    #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
-    # distance = rho * arc length
-
-    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) +
-           math.cos(phi1)*math.cos(phi2))
-
-    try:
-        arc = math.acos( cos )
-    except:
-        cos = 1.0
-        arc = math.acos (cos)
-
-    # Remember to multiply arc by the radius of the earth
-    # in your favorite set of units to get length.
-
-    # Raio da terra em metros (valor aproximado)
-    earth_radius = 6378000
-    return arc * earth_radius
+    args = parser.parse_args()
+    args.beta = args.beta or 0.011
+    return args

@@ -4,10 +4,11 @@ read "SLIM: Sparse LInear Methods for Top-N Recommender Systems".
 """
 from sklearn.linear_model import SGDRegressor
 from util import tsv_to_matrix
-from metrics import compute_precision
-from recommender import slim_recommender
-import numpy as np
+from util.metrics import compute_precision
+from util.recommender import slim_recommender
 from scipy.sparse import lil_matrix
+from util import parse_args
+import simplejson as json
 
 
 def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
@@ -29,8 +30,8 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
 
         http://glaros.dtc.umn.edu/gkhome/slim/overview
     """
-    alpha = l1_reg+l2_reg
-    l1_ratio = l1_reg/alpha
+    alpha = l1_reg + l2_reg
+    l1_ratio = l1_reg / alpha
 
     model = SGDRegressor(
         penalty='elasticnet',
@@ -47,7 +48,7 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
 
     for j in range(n):
         if j % 50 == 0:
-            print('-> %2.2f%%' % ((j/float(n)) * 100))
+            print('-> %2.2f%%' % ((j / float(n)) * 100))
 
         aj = A[:, j].copy()
         # We need to remove the column j before training
@@ -60,7 +61,7 @@ def slim_train(A, l1_reg=0.001, l2_reg=0.0001):
         w = model.coef_
 
         # Removing negative values because it makes no sense in our approach
-        w[w<0] = 0
+        w[w < 0] = 0
 
         for el in w.nonzero()[0]:
             W[(el, j)] = w[el]
@@ -75,9 +76,9 @@ def main(train_file, test_file):
 
     recommendations = slim_recommender(A, W)
 
-    compute_precision(recommendations, test_file)
+    return compute_precision(recommendations, test_file)
 
-if __name__ == '__main__':
-    main('data/cidades/todos_com_stemming/usuarios_cidades_train.tsv',
-         'data/cidades/todos_com_stemming/usuarios_cidades_test.tsv')
 
+args = parse_args()
+precisions = main(args.train, args.test)
+open(args.output, 'w').write(json.dumps(precisions))
