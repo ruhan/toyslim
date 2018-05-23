@@ -1,13 +1,13 @@
 # SLIM and SSLIM Recommendation Methods - TOY implementations
 
-We have implemented SLIM [1]_ and SSLIM [2]_ (more specifically cSLIM) in a "toy" way, that's useful **only** to study these methods, it is absolutely **impossible** to use these implementations on production, because of performance and some static aspects put on the code.
+We have implemented SLIM [1] and SSLIM [2] (more specifically cSLIM) in a "toy" way, that's useful **only** to study these methods, it is absolutely **impossible** to use these implementations on production, because of performance and some static aspects put on the code.
 
 The code implemented here is also based on mrec (https://github.com/Mendeley/mrec). We preferred to implement a toy version because we find some difficulties to debug mrec code due to its complexities related to being a production tool. If you want to use it in production, we really suggest you to go to this excellent implementation of SLIM done by the Mendeley Team.
 
 
 We've also implemented some new ideas to extend these methods in some specific cases.
 
-# Install
+# Installing
 Just install the requirements (it might take some minutes):
 
 ```python
