@@ -96,5 +96,6 @@ Again, it is only a plus, because the scripts has no flexibility. If you need to
 
 
 # References
-.. [1] Xia Ning and George Karypis (2011). SLIM: Sparse Linear Methods for Top-N Recommender Systems. ICDM, 2011.
-.. [2] Xia Ning and George Karypis (2012). Sparse linear methods with side information for top-n recommendations. RecSys 2012.
+[1] Xia Ning and George Karypis (2011). SLIM: Sparse Linear Methods for Top-N Recommender Systems. ICDM, 2011.
+
+[2] Xia Ning and George Karypis (2012). Sparse linear methods with side information for top-n recommendations. RecSys 2012.
